@@ -1,0 +1,23 @@
+{
+  "name": "node-chatroom",
+  "version": "1.0.0",
+  "description": "chatroom demo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zwy706670363/node-chatroom.git"
+  },
+  "keywords": [
+    "node"
+  ],
+  "author": "zhuwanying",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zwy706670363/node-chatroom/issues"
+  },
+  "homepage": "https://github.com/zwy706670363/node-chatroom#readme",
+  "dependencies": {}
+}

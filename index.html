@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<title>Socket.IO聊天室</title>
+	<style>
+		body{
+			background-color:#f0f0f0;
+			font-size: 14px;
+			font-family: Verdana, Helvetica, sans-serif;
+		}
+		.container{
+
+		}
+		.btn{
+			padding: 6px 12px;
+			border: 1px solid transparent;
+			border-radius: 4px;
+			color: #333;
+  			background-color: #fff;
+  			border-color: #ccc;
+  			cursor: pointer;
+		}
+		.btn:hover{
+			color: #333;
+  			background-color: #e6e6e6;
+  			border-color: #adadad;
+		}
+		.btn:disabled{
+			cursor: default;
+  			background-color: #fff;
+  			border-color: #ccc;
+		}
+		input{
+			border:1px solid #ccc;
+			padding: 6px 12px;			
+		}
+		.user-operate{
+			padding: 15px;
+		}
+		.chat-box{
+
+		}
+		.message-box{
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			margin-right: 20px;
+		}
+		.message-box,#users-list{
+			float: left;
+		}
+		.message-box #message-show{
+			height: 300px;
+			overflow: auto;
+			line-height: 1.5;
+			margin-bottom: 20px;
+		}
+		.message-tools{
+			margin-left: 15px;
+			margin-right: 15px;
+		}
+		.message-tools label,.message-tools button{
+			vertical-align: top;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+  		<h1>Socket.IO聊天室</h1>
+		<div class="user-operate">
+			<label for="username" class="col-sm-2 col-xs-2 control-label">用户名：</label>
+			<input type="text" class="form-control" id="username" value="游客">
+			<button type="button" class="btn" id="btnLogin">登录</button>
+			<button type="button" class="btn" id="btnLogout" disabled>退出</button>
+		</div>
+		<div class="chat-box">
+			<div class="message-box">
+				<!-- 消息区 -->
+				<div id="message-show"></div>
+				<!-- 消息编辑区 -->
+				<div class="message-tools">
+					<label for="message-edit" class="col-sm-2 col-xs-2 control-label">对话</label>
+					<textarea name="" id="message-edit" cols="80" rows="5"></textarea>
+					<button type="button" class="btn" id="btnSend">发送</button>
+				</div>
+			</div>
+			<div id="users-list">
+				用户列表:
+			</div>
+		</div>
+	</div>
+	<!-- start由服务器端Socket.IO类库自动提供 -->
+	<script src="/socket.io/socket.io.js"></script>
+	<!-- end -->
+	<script>
+		let userName,usersList,socket,tbxUsername,tbxMsg,divChat,btnLogin,btnLogout;
+		let isLogin = false;
+		window.onload = () => {		// 打开页面
+			divChat = document.getElementById('message-show');
+			tbxUsername = document.getElementById('username');
+			tbxMsg = document.getElementById('message-edit');
+			tbxUsername.focus();
+			tbxUsername.select();
+			
+			btnLogin = document.getElementById('btnLogin');
+			btnLogin.onclick = btnLogin_onclick;
+			btnLogout = document.getElementById('btnLogout');
+			btnLogout.onclick = btnLogout_onclick;
+			btnSend = document.getElementById('btnSend');
+			btnSend.onclick = btnSend_onclick;
+			tbxMsg.onkeypress = btnSend_onkeypress;
+			//btnSend.addEventListener('click', btnSend_onclick);
+			usersList = document.getElementById('users-list');
+			btnSend.disabled = true;
+			btnLogin.disable = '';
+			btnLogout.disable = true;
+		}
+		window.onunload = () => {	// 关闭页面
+			socket.emit('logout',userName);
+			socket.disconnect();
+		}
+		function AddMsg(msg){		// 消息显示
+			divChat.innerHTML += msg + '<br>';
+			if(divChat.scrollHeight > divChat.clientHeight){
+				divChat.scrollTop = divChat.scrollHeight - divChat.clientHeight;
+			}
+		}
+		function btnLogin_onclick(){	// 登录
+			if(tbxUsername.value.trim() == ''){
+				alert('请输入用户名!');
+				return;
+			}
+			isLogin = true;
+			userName = tbxUsername.value.trim();
+			socket = io.connect();
+			socket.on('connect', () => {
+				AddMsg("与聊天服务器已建立连接。");
+				socket.on('login', (name) => {
+					AddMsg("欢迎用户" + name + "进入聊天室");
+				});
+				socket.on('sendClients', (names) => {
+					let str = '';
+					names.forEach((name) => {
+						str += name + '<br>';
+					});
+					usersList.innerHTML = '用户列表：<br>';
+					usersList.innerHTML += str;
+				});
+				socket.on('chat', (data) => {
+					AddMsg(data.user + '说：' + data.msg);
+				});
+				socket.on('disconnect', () => {
+					AddMsg("与聊天室的服务器已断开");
+					btnSend.disable = true;
+					btnLogin.disable = '';
+					btnLogout.disable = true;
+				});
+				socket.on('logout', (name) => {
+					AddMsg("用户" + name + "已退出聊天室");
+				}); 
+				socket.on('duplicate', () => {
+					alert('该用户名已被使用！');
+					btnSend.disable = true;
+					btnLogin.disable = '';
+					btnLogout.disable = true;
+				});
+				socket.on('error', (err) => {
+					AddMsg('与聊天服务器之间的连接发生错误。');
+					socket.disConnect();
+					socket.removeAllListeners('connect');
+					io.sockets = {};
+				});
+			});
+
+			socket.emit('login',userName);
+			btnLogin.disable = true;
+			btnLogout.disable = '';
+			btnSend.disable = '';
+		}
+
+		function btnLogout_onclick(){	// 退出
+			socket.emit('logout',userName);
+			socket.disconnect();
+			socket.removeAllListeners('connect');
+			io.sockets = {};
+			AddMsg('用户：' + userName + '已退出聊天室。');
+			usersList.innerHTML = '用户列表：';
+			btnSend.disable = true;
+			btnLogout.disable = true;
+			btnLogin.disable = '';
+		}
+
+		function btnSend_onclick(){		// 发送消息
+			var msg = tbxMsg.value;
+			if(msg.length > 0){
+				socket.emit('chat',{user:userName,msg:msg});
+				tbxMsg.value = '';
+			}
+		}
+		function btnSend_onkeypress(e){	// 回车发送消息
+			if(isLogin && e.keyCode == 13){
+				e.preventDefault();
+				btnSend_onclick();
+			}
+		}
+	</script>
+</body>
+</html>
