@@ -96,6 +96,7 @@
 	<script>
 		let userName,usersList,socket,tbxUsername,tbxMsg,divChat,btnLogin,btnLogout;
 		let isLogin = false;
+
 		window.onload = () => {		// 打开页面
 			divChat = document.getElementById('message-show');
 			tbxUsername = document.getElementById('username');
@@ -116,16 +117,19 @@
 			btnLogin.disable = '';
 			btnLogout.disable = true;
 		}
+
 		window.onunload = () => {	// 关闭页面
 			socket.emit('logout',userName);
 			socket.disconnect();
 		}
+
 		function AddMsg(msg){		// 消息显示
 			divChat.innerHTML += msg + '<br>';
 			if(divChat.scrollHeight > divChat.clientHeight){
 				divChat.scrollTop = divChat.scrollHeight - divChat.clientHeight;
 			}
 		}
+
 		function btnLogin_onclick(){	// 登录
 			if(tbxUsername.value.trim() == ''){
 				alert('请输入用户名!');
@@ -198,6 +202,7 @@
 				tbxMsg.value = '';
 			}
 		}
+		
 		function btnSend_onkeypress(e){	// 回车发送消息
 			if(isLogin && e.keyCode == 13){
 				e.preventDefault();
